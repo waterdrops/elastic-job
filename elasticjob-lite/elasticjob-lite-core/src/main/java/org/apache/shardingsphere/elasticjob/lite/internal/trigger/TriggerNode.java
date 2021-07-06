@@ -15,59 +15,66 @@
  * limitations under the License.
  */
 
-package org.apache.shardingsphere.elasticjob.lite.internal.server;
+package org.apache.shardingsphere.elasticjob.lite.internal.trigger;
 
 import org.apache.shardingsphere.elasticjob.infra.handler.sharding.JobInstance;
 import org.apache.shardingsphere.elasticjob.lite.internal.schedule.JobRegistry;
 import org.apache.shardingsphere.elasticjob.lite.internal.storage.JobNodePath;
-import org.apache.shardingsphere.elasticjob.infra.env.IpUtils;
-
-import java.util.Objects;
-import java.util.regex.Pattern;
 
 /**
- * Server node.
+ * Trigger node.
  */
-public final class ServerNode {
+public final class TriggerNode {
     
-    public static final String ROOT = "servers";
+    public static final String ROOT = "trigger";
     
-    private static final String SERVERS = ROOT + "/%s";
+    private static final String TRIGGER = ROOT + "/%s";
     
     private final String jobName;
     
     private final JobNodePath jobNodePath;
     
-    public ServerNode(final String jobName) {
+    public TriggerNode(final String jobName) {
         this.jobName = jobName;
         jobNodePath = new JobNodePath(jobName);
     }
     
     /**
-     * Judge is server path or not.
+     * Is local trigger path.
      *
-     * @param path path to be judged
-     * @return is server path or not
+     * @param path path
+     * @return is local trigger path or not
      */
-    public boolean isServerPath(final String path) {
-        return Pattern.compile(jobNodePath.getFullPath(ServerNode.ROOT) + "/" + IpUtils.IP_REGEX).matcher(path).matches();
+    public boolean isLocalTriggerPath(final String path) {
+        JobInstance jobInstance = JobRegistry.getInstance().getJobInstance(jobName);
+        return null != jobInstance && path.equals(jobNodePath.getFullPath(String.format(TRIGGER, jobInstance.getJobInstanceId())));
     }
     
     /**
-     * Judge is server path for localhost or not.
+     * Get local trigger path.
      *
-     * @param path path to be judged
-     * @return is server path for localhost or not
+     * @return local trigger path
      */
-    public boolean isLocalServerPath(final String path) {
-        JobInstance jobInstance = JobRegistry.getInstance().getJobInstance(jobName);
-        if (Objects.isNull(jobInstance)) {
-            return false;
-        }
-        return path.equals(jobNodePath.getFullPath(String.format(SERVERS, jobInstance.getServerIp())));
+    public String getLocalTriggerPath() {
+        return getTriggerPath(JobRegistry.getInstance().getJobInstance(jobName).getJobInstanceId());
     }
     
-    String getServerNode(final String ip) {
-        return String.format(SERVERS, ip);
+    /**
+     * Get trigger path.
+     *
+     * @param instanceId instance id
+     * @return trigger path
+     */
+    public String getTriggerPath(final String instanceId) {
+        return String.format(TRIGGER, instanceId);
+    }
+    
+    /**
+     * Get trigger root.
+     *
+     * @return trigger root
+     */
+    public String getTriggerRoot() {
+        return ROOT;
     }
 }
